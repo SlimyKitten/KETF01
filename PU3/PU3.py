@@ -26,7 +26,7 @@ def read_CSV(fp):
         data = [data for data in reader]
         return data
 
-def model(t, c,delta_L=0.5E-5,p_O2=p_O2):
+def model(t, c,delta_L=0.5E-5,p_O2=p_O2,k=0):
     h=0.2
     q_g = 2E-3/60
     D_O2_Luft = 1.76E-5
@@ -45,8 +45,9 @@ def model(t, c,delta_L=0.5E-5,p_O2=p_O2):
     vol_b = 4*pi*(d_bubble/2)**3/3
     num_bubbles = q_g*h/(vol_b*v_t)
     A=num_bubbles*pi*d_bubble**2
-    dcdt = A*N_a/V
-    print(K_L*A/V)
+    r=k*t*c
+
+    dcdt = (A*N_a-r)/V
 
     return dcdt
 
@@ -59,6 +60,9 @@ plt.plot(sol.t, sol.y.T/c_max*100, label=f'Modelldata')
 c0=[c_max]
 sol = solve_ivp(lambda t, c: model(t,c,delta_L=9E-6,p_O2=0),t_span,c0,t_eval=np.linspace(*t_span,1000))
 plt.plot(sol.t, sol.y.T/c_max*100, label=f'Avgasning av tanken')
+c0=[0]
+sol = solve_ivp(lambda t, c: model(t,c,delta_L=9E-6,k=1E-5),t_span,c0,t_eval=np.linspace(*t_span,1000))
+plt.plot(sol.t, sol.y.T/c_max*100, label=f'Tankreaktor')
 
 exp_data = read_CSV('PU3_exp_data.csv')
 t, c, T = np.asarray(exp_data, dtype=np.float32).T
