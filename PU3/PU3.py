@@ -26,6 +26,15 @@ def read_CSV(fp):
         data = [data for data in reader]
         return data
 
+def timeForClosestConc(cGoal, times, concentrations):
+    bestConcDiff = np.Inf
+    bestTime = np.Inf
+    for (T,t) in zip(concentrations, times):
+        if(abs(T-cGoal)<bestConcDiff):
+            bestConcDiff = abs(T-cGoal)
+            bestTime = t
+    return bestTime
+
 def model(t, c,delta_L=0.5E-5,p_O2=p_O2,k=0):
     h=0.2
     q_g = 2E-3/60
@@ -47,13 +56,13 @@ def model(t, c,delta_L=0.5E-5,p_O2=p_O2,k=0):
     A=num_bubbles*pi*d_bubble**2
     r=k*t*c
 
-    dcdt = (A*N_a-r)/V
+    dcdt = (A*N_a)/V-r
 
     return dcdt
 
 # print(model(0,0))
 
-t_span = [0,15*60]
+t_span = [0,5*60*60]
 c0=[0]
 sol = solve_ivp(lambda t, c: model(t,c,delta_L=9E-6),t_span,c0,t_eval=np.linspace(*t_span,1000))
 plt.plot(sol.t, sol.y.T/c_max*100, label=f'Modelldata')
@@ -63,6 +72,7 @@ plt.plot(sol.t, sol.y.T/c_max*100, label=f'Avgasning av tanken')
 c0=[0]
 sol = solve_ivp(lambda t, c: model(t,c,delta_L=9E-6,k=1E-5),t_span,c0,t_eval=np.linspace(*t_span,1000))
 plt.plot(sol.t, sol.y.T/c_max*100, label=f'Tankreaktor')
+print(timeForClosestConc(10,sol.t,sol.y.T/c_max*100)/60/60,'timmar')
 
 exp_data = read_CSV('PU3_exp_data.csv')
 t, c, T = np.asarray(exp_data, dtype=np.float32).T
